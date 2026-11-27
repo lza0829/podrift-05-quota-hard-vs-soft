@@ -3,7 +3,17 @@ const j = async (url, opt) => {
     headers: { "Content-Type": "application/json" },
     ...opt,
   });
-  return r.json();
+  const text = await r.text();
+  let body = {};
+  try {
+    body = text ? JSON.parse(text) : {};
+  } catch {
+    body = { raw: text };
+  }
+  if (!r.ok && typeof body === "object" && body !== null) {
+    body.http_status = r.status;
+  }
+  return body;
 };
 
 export const api = {
@@ -16,9 +26,13 @@ export const api = {
   probes: () => j("/api/探针"),
   setProbe: (podId, body) => j(`/api/探针/${podId}`, { method: "POST", body: JSON.stringify(body) }),
   quota: () => j("/api/配额"),
+  setQuota: (body) => j("/api/配额", { method: "POST", body: JSON.stringify(body) }),
+  topQuota: () => j("/api/配额/顶格", { method: "POST" }),
+  quotaReplay: () => j("/api/配额/重放"),
   policy: () => j("/api/重启策"),
   setPolicy: (body) => j("/api/重启策", { method: "POST", body: JSON.stringify(body) }),
   align: () => j("/api/对读"),
+  alignReplay: () => j("/api/对读/重放"),
   settings: () => j("/api/舱规"),
   events: () => j("/api/事件"),
 };
